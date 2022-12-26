@@ -11,11 +11,11 @@ intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
 # Print out all the intents for debugging purposes
-for Intents in discord.all():
+for Intents in discord.Intents.all():
     print(Intents)
 
 # Set the API key for the OpenAI library
-openai.api_key = "Open AI API key"
+openai.api_key = "OPEN_AI_KEY"
 
 # Define the generate_response function
 def generate_response(message):
@@ -49,8 +49,8 @@ async def on_message(message):
             await message.channel.send(f"This bot has been written by Daxer, any pool request or issue can be uploaded here:\n\n-Source code: {link}")
         # If the message is not the "/help" command, generate a response
         elif message.content:
-            response = generate_response(f" {message.content}")
+            response = generate_response(f" {message.content}. If a piece of code is provided within the response include a code block formatting using the right lamnguage key for code block in discord")
             await message.channel.send(response)
 
 # Start the Discord client
-client.run("Discord bot token")
+client.run("DISCORD_TOKEN")
