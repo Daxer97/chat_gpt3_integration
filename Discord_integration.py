@@ -16,7 +16,7 @@ for Intents in discord.Intents.all():
     print(Intents)
 
 # Set the API key for the OpenAI library
-openai.api_key = "OPEN_AI_KEY"
+openai.api_key = "OPEN_AI_TOKEN"
 
 
 # Define the generate_response function
@@ -41,6 +41,37 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
+#Define the send_response() function
+async def send_response(response, channel):
+    # Find the start and end of the code block in the response
+    start = response.find("```")
+    end = response.rfind("```")
+
+    # Check if a code block is present in the response
+    if start != -1 and end != -1:
+        # Split the response around the start and end of the code block
+        messages = response[:start].split("\n") + [response[start:end + 3]] + response[end + 3:].split("\n")
+    else:
+        # Split the response into separate messages
+        messages = response.split("\n")
+
+    # Initialize an empty list to store the formatted messages
+    formatted_messages = []
+
+    # Iterate through the messages
+    for message in messages:
+        # Check if the message is a code block
+        if message.startswith("```") and message.endswith("```"):
+            # Add the code block to the list of formatted messages
+            formatted_messages.append(message)
+        else:
+            # Wrap the message and add the resulting lines to the list of formatted messages
+            formatted_messages.extend(textwrap.wrap(message, width=2000))
+
+    # Send the formatted messages to the Discord channel
+    for message in formatted_messages:
+        await channel.send(message)
+
 # Create an event handler for when a message is received
 @client.event
 async def on_message(message):
@@ -60,42 +91,14 @@ async def on_message(message):
         elif message.content:
             # Generate the response
             response = generate_response(
-                f" {message.content}. If a piece of code is provided within the response include a code block formatting using the right lamnguage key for code block in discord")
-            print(response)
-            # Define the send_response function
-            async def send_response(response, channel):
-                # Find the start and end of the code block in the response
-                start = response.find("```")
-                end = response.rfind("```")
-
-                # Check if a code block is present in the response
-                if start != -1 and end != -1:
-                    # Split the response around the start and end of the code block
-                    messages = response[:start].split("\n") + [response[start:end + 3]] + response[end + 3:].split("\n")
-                else:
-                    # Split the response into separate messages
-                    messages = response.split("\n")
-
-                # Initialize an empty list to store the formatted messages
-                formatted_messages = []
-
-                # Iterate through the messages
-                for message in messages:
-                    # Check if the message is a code block
-                    if message.startswith("```") and message.endswith("```"):
-                        # Add the code block to the list of formatted messages
-                        formatted_messages.append(message)
-                    else:
-                        # Wrap the message and add the resulting lines to the list of formatted messages
-                        formatted_messages.extend(textwrap.wrap(message, width=2000))
-
-                # Send the formatted messages to the Discord channel
-                for message in formatted_messages:
-                    await channel.send(message)
-
-            # Send the response to the Discord channel
-            await send_response(response, message.channel)
-
+                f" {message.content}. If a piece of code is provided within the response include a code block formatting using the right language key for code block in discord.")
+            #print(len(response))
+            if len(response) < 1900:
+                await message.channel.send(response)
+            else:
+                print(len(response))
+                # Send the response to the Discord channel
+                await send_response(response, message.channel)
 
 # Start the Discord client
 client.run("DISCORD_TOKEN")
