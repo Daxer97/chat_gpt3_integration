@@ -16,7 +16,7 @@ for Intents in discord.Intents.all():
     print(Intents)
 
 # Set the API key for the OpenAI library
-openai.api_key = "OPEN_AI_TOKEN"
+openai.api_key = "OPEN_AI_KEY"
 
 
 # Define the generate_response function
@@ -49,6 +49,7 @@ async def send_response(response, channel):
 
     # Check if a code block is present in the response
     if start != -1 and end != -1:
+        print("code block found")
         # Split the response around the start and end of the code block
         messages = response[:start].split("\n") + [response[start:end + 3]] + response[end + 3:].split("\n")
     else:
@@ -62,14 +63,53 @@ async def send_response(response, channel):
     for message in messages:
         # Check if the message is a code block
         if message.startswith("```") and message.endswith("```"):
-            # Add the code block to the list of formatted messages
-            formatted_messages.append(message)
+            # Extract the language key from the message
+            language_key = message[3:message.index('\n')]
+            print(f"{language_key}")
+            # Remove the triple backticks and the language key from the beginning of the message
+            message = message[len(language_key) + 3:]
+
+            # Check if the message is more than 2000 characters long
+            if len(message) > 1990:
+                print("code block longer than 1990")
+                # Initialize the list of chunks
+                chunks = []
+
+                # Split the message into chunks of 2000 characters or less, preserving the whitespace
+                while len(message) > 1990:
+                    print("code block greater than 1990 charcaters")
+                    chunk = message[:message.rindex('\n', 0, 1990)]
+                    chunks.append(chunk)
+                    message = message[len(chunk):]
+
+                # Add the remaining message as the last chunk
+                chunks.append(message)
+
+                # Add the triple backticks, language key, and whitespace to the beginning of each chunk except the last one
+                chunks = [f"```{language_key}\n{chunk}\n```" for chunk in chunks[:-1]]
+                for ch in chunks:
+                    print(f"{len(ch)}")
+
+                # Add the triple backticks, language key, and whitespace to the beginning of the last chunk
+                chunks.append(f"```{language_key}\n{chunks[-1]}")
+
+                # Add the chunks to the list of formatted messages
+                formatted_messages.append(chunks)
+            else:
+                # Add the triple backticks, language key, and whitespace to the beginning of the message
+                message = f"```{language_key}\n{message}"
+
+                # Add the message to the list of formatted messages
+                formatted_messages.append(message)
+
         else:
+            #print(f"{len(message)} text file")
             # Wrap the message and add the resulting lines to the list of formatted messages
             formatted_messages.extend(textwrap.wrap(message, width=2000))
 
     # Send the formatted messages to the Discord channel
     for message in formatted_messages:
+        print(f"{len(message)} response")
         await channel.send(message)
 
 # Create an event handler for when a message is received
@@ -101,4 +141,4 @@ async def on_message(message):
                 await send_response(response, message.channel)
 
 # Start the Discord client
-client.run("DISCORD_TOKEN")
+client.run("DISOCRD_BOT_TOKEN")
