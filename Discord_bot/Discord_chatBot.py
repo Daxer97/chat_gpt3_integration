@@ -16,7 +16,7 @@ for Intents in discord.Intents.all():
     print(Intents)
 
 # Set the API key for the OpenAI library
-openai.api_key = "OPEN_AI_KEY"
+openai.api_key = "OPEN_AI_TOKEN"
 
 
 # Define the generate_response function
@@ -96,6 +96,7 @@ async def send_response(response, channel):
                 # Add the chunks to the list of formatted messages
                 formatted_messages.append(chunks)
             else:
+                print("code block no longer than 1990")
                 # Add the triple backticks, language key, and whitespace to the beginning of the message
                 message = f"```{language_key}\n{message}"
 
@@ -103,7 +104,6 @@ async def send_response(response, channel):
                 formatted_messages.append(message)
 
         else:
-            #print(f"{len(message)} text file")
             # Wrap the message and add the resulting lines to the list of formatted messages
             formatted_messages.extend(textwrap.wrap(message, width=2000))
 
@@ -131,9 +131,10 @@ async def on_message(message):
         elif message.content:
             # Generate the response
             response = generate_response(
-                f" {message.content}. If a piece of code is provided within the response include a code block formatting using the right language key for code block in discord.")
+                f" {message.content}. The entire response need to be written in markdown markup language, containing code while asked and with the right language key on the code block matching the context. Use '**' instead of '#' and '***' instead of '##' while using markdown.")
             #print(len(response))
             if len(response) < 1900:
+                print(f"Less than 1900 characters response\n{response}")
                 await message.channel.send(response)
             else:
                 print(len(response))
@@ -141,4 +142,4 @@ async def on_message(message):
                 await send_response(response, message.channel)
 
 # Start the Discord client
-client.run("DISOCRD_BOT_TOKEN")
+client.run("DISCORD_TOKEN")
