@@ -16,7 +16,7 @@ for Intents in discord.Intents.all():
     print(Intents)
 
 # Set the API key for the OpenAI library
-openai.api_key = "OPEN_AI_TOKEN"
+openai.api_key = "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"
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -28,15 +28,15 @@ def markdown_text_discord(string):
         if "# " in string:
             # Replace "#" with the correct murk-up syntax
             string = string.replace("# ", "***", 1)
-            current_match = "**"
+            current_match = "***"
         elif "## " in string:
             # Replace "##" with the correct murk-up syntax
             string = string.replace("## ", "**", 1)
-            current_match = "*"
+            current_match = "**"
         elif "### " in string:
             # Replace "###" with the correct murk-up syntax
             string = string.replace("### ", "*", 1)
-            current_match = "~~"
+            current_match = "*"
         else:
             # Break the loop if no match has been found
             break
@@ -45,7 +45,7 @@ def markdown_text_discord(string):
         index = string.find(current_match)
         while index != -1:
             # Replace "\n" with the relevant first match (i.e. "**" or "*") and a "\n after"
-            string = string[:index] + current_match + "\n" + string[index+1:]
+            string = string[:index] + current_match + "\n" + string[index + 1:]
             # Find the next occurrence of "\n"
             index = string.find("\n", index + len(current_match) + 1)
 
@@ -81,7 +81,7 @@ def generate_response(message):
         model="text-davinci-003",
         prompt=f"{message}\n",
         max_tokens=1024,
-        temperature=0.6,
+        temperature=0.8,
     )
 
     # Return the text of the first response choice
@@ -215,6 +215,8 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
+    #channel = client.get_channel(1067633857014267905)
+    #await channel.send("Im now Up and working!")
 
 
 # Create an event handler for when a message is received
@@ -247,4 +249,4 @@ async def on_message(message):
 
 
 # Start the Discord client
-client.run("DISCORD_TOKEN")
+client.run("MTA1NTU0NzUxNTA3NzkyNjk5Mg.G835cG.a5L9igpbWh_o7TSwuLh9KKyqQxAtJUMYN9yRbI")
