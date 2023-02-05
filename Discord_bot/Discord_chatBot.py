@@ -3,7 +3,7 @@ import openai
 import textwrap
 
 # Set the link to the source code
-link = "https://github.com/Daxer97/chat_gpt3_discord_integration"
+link = ""
 
 # Set the intents for the Discord client
 intents = discord.Intents.all()
@@ -16,41 +16,38 @@ for Intents in discord.Intents.all():
     print(Intents)
 
 # Set the API key for the OpenAI library
-openai.api_key = ""
+openai.api_key = "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"
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Change the the markup for title and subtitle of the passed string for discord.
-def markdown_text_discord(string):
-    # Initialize a variable to keep track of the current murk-up formatting string
-    while True:
-        # Look for the first occurrence of "#", "##", or "###"
-        if "# " in string:
-            # Replace "#" with the correct murk-up syntax
-            string = string.replace("# ", "***", 1)
-            current_match = "***"
-        elif "## " in string:
-            # Replace "##" with the correct murk-up syntax
-            string = string.replace("## ", "**", 1)
-            current_match = "**"
-        elif "### " in string:
-            # Replace "###" with the correct murk-up syntax
-            string = string.replace("### ", "*", 1)
-            current_match = "*"
+def markdown_to_discord(text):
+    # Split the text into lines
+    lines = text.split("\n")
+
+    # Process each line
+    for i, line in enumerate(lines):
+        # Check if the line starts with "#", "##", or "###"
+        if line.startswith("# "):
+            lines[i] = "**" + line[2:] + "**"
+        elif line.startswith("## "):
+            lines[i] = "**" + line[3:] + "**"
+        elif line.startswith("### "):
+            lines[i] = "**" + line[4:] + "**"
         else:
-            # Break the loop if no match has been found
-            break
+            # Check if the line contains "*" or "**"
+            index = line.find("*")
+            while index != -1:
+                if line[index:index+2] == "**":
+                    line = line[:index] + "**" + line[index+2:]
+                    index += 2
+                else:
+                    line = line[:index] + "_" + line[index + 1:]
+                # Find the next occurrence of "*" or "**"
+                index = line.find("*", index + 1)
+            lines[i] = line
 
-        # Find the index of the first occurrence of "\n" after the current first_match
-        index = string.find(current_match)
-        while index != -1:
-            # Replace "\n" with the relevant first match (i.e. "**" or "*") and a "\n after"
-            string = string[:index] + current_match + "\n" + string[index + 1:]
-            # Find the next occurrence of "\n"
-            index = string.find("\n", index + len(current_match) + 1)
-
-    # Return the modified string
-    return string
+    # Join the lines back into a single string
+    return "\n".join(lines)
 
 
 # This function takes a string and two delimiters as input
@@ -195,7 +192,7 @@ async def send_response(var, channel):
             print(f"text chunk: {message}\n--------\n\n")
             # Wrap the message and add the resulting lines to the list of formatted messages
             formatted_messages.extend(
-                textwrap.wrap(markdown_text_discord(message), width=2000, replace_whitespace=False))
+                textwrap.wrap(markdown_to_discord(message), width=2000, replace_whitespace=False))
 
     # Send the formatted messages to the Discord channel
     print(f"{len(formatted_messages)} items in formatted_messages list (167)")
@@ -215,8 +212,8 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
-    #channel = client.get_channel(1067633857014267905)
-    #await channel.send("Im now Up and working!")
+    # channel = client.get_channel(1067633857014267905)
+    # await channel.send("I'm now Up and working!")
 
 
 # Create an event handler for when a message is received
@@ -239,8 +236,8 @@ async def on_message(message):
         elif message.content:
             # Generate the response
             response = generate_response(
-                f" {message.content}. The response need to be written in markdown markup language and, "
-                f"if code is included in the response, it need to be placed within a code block with the right "
+                f" {message.content}. The response need to be written in markdown markup language, "
+                f"if code need to be included in the response(if asked) it need to be placed within a code block with the right"
                 f"language key on the code block matching the context.")
             print(f"The response length is: {len(response)}")
             await init_response(response, message.channel)
