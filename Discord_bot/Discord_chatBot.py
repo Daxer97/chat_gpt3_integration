@@ -16,7 +16,7 @@ for Intents in discord.Intents.all():
     print(Intents)
 
 # Set the API key for the OpenAI library
-openai.api_key = "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"
+openai.api_key = ""
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -249,4 +249,4 @@ async def on_message(message):
 
 
 # Start the Discord client
-client.run("MTA1NTU0NzUxNTA3NzkyNjk5Mg.G835cG.a5L9igpbWh_o7TSwuLh9KKyqQxAtJUMYN9yRbI")
+client.run("")
