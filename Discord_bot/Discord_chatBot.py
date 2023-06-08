@@ -16,7 +16,7 @@ for Intents in discord.Intents.all():
     print(Intents)
 
 # Set the API key for the OpenAI library
-openai.api_key = "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"
+openai.api_key = ""
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -72,17 +72,21 @@ def escape_backticks_codeblocks(string, delimiter1):
 
 
 # Define the generate_response function
-def generate_response(message):
+def generate_response(mex):
     # Use the OpenAI Completion API to generate a response
-    response = openai.Completion.create(
-        model="text-davinci-003",
-        prompt=f"{message}\n",
-        max_tokens=1024,
-        temperature=0.8,
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a friendly and loved trading assistant, The response need to be written in markdown markup language"
+                f"If the response include a a code explainantion it need to be inserted in a code block with the right formatting language key on the code block matching the requested and/or needed programming language"
+            },
+            {"role": "user", "content": f"{mex}\n"}
+            ]
     )
+    print(response.choices)
 
     # Return the text of the first response choice
-    return response.choices[0].text
+    return response.choices[0].message.content
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -236,9 +240,8 @@ async def on_message(message):
         elif message.content:
             # Generate the response
             response = generate_response(
-                f" {message.content}. The response need to be written in markdown markup language, "
-                f"if code need to be included in the response(if asked) it need to be placed within a code block with the right"
-                f"language key on the code block matching the context.")
+                f" {message.content}"
+                )
             print(f"The response length is: {len(response)}")
             await init_response(response, message.channel)
         else:
