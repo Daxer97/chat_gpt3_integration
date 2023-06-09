@@ -1,6 +1,13 @@
 import discord
 import openai
 import textwrap
+import mysql.connector
+
+
+global CLIENT_ID
+global SERVER_ID_CONTENT
+global SYSTEM_ID
+SYSTEM_ID = 0;
 
 # Set the link to the source code
 link = ""
@@ -17,6 +24,91 @@ for Intents in discord.Intents.all():
 
 # Set the API key for the OpenAI library
 openai.api_key = ""
+
+# ----------------------------------------------------------------------------------------------------------------------
+def get_chats(x, y, z):
+    try:
+        # Connect to the database
+        conn = mysql.connector.connect(
+            host='127.0.0.1',
+            user='root',
+            password='',
+            database='chat'
+        )
+
+        # Create a cursor to execute SQL queries
+        cursor = conn.cursor()
+
+        # Define the SQL query with a WHERE clause
+        query = f"SELECT SERVER_ID, ROLE, CLIENT_ID, TIMESTAMP, TEXT FROM your_table WHERE SERVER_ID = '{x}' AND ROLE IN ('{y}', 'system', 'assistant') AND CLIENT_ID IN ('{z}', '{SYSTEM_ID}') ORDER BY TIMESTAMP"
+
+        # Execute the query
+        cursor.execute(query)
+
+        # Fetch all the rows returned by the query
+        rows = cursor.fetchall()
+
+        # Define an array to store the dictionaries
+        result = []
+
+        # Iterate over the rows and create a dictionary for each row
+        for row in rows:
+            # Create a dictionary for the current row
+            row_dict = {
+                'role': row[1],
+                'content': row[4]
+            }
+
+            # Add the dictionary to the result array
+            result.append(row_dict)
+
+        # Close the cursor and connection
+        cursor.close()
+        conn.close()
+
+        return result
+
+    except mysql.connector.Error as error:
+        # Handle the database error
+        print("An error occurred while querying the database:", error)
+
+
+def put_chats(x, y, k, j):
+    try:
+        # Connect to the database
+        conn = mysql.connector.connect(
+            host='127.0.0.1',
+            user='root',
+            password='',
+            database='chat'
+        )
+
+        # Create a cursor to execute SQL queries
+        cursor = conn.cursor()
+
+        # Define the data
+        server_id = x;
+        role = y;
+        client_id = k
+        text = j;
+
+        # Define the SQL query with the specific column names
+        query = "INSERT INTO your_table (SERVER_ID, ROLE, CLIENT_ID, TEXT) " \
+                "VALUES (%s, %s, %s, %s)"
+
+        # Execute the query with the values
+        cursor.execute(query, (server_id, role, client_id, text))
+
+        # Commit the changes to the database
+        conn.commit()
+
+        # Close the cursor and connection
+        cursor.close()
+        conn.close()
+
+    except mysql.connector.Error as error:
+        # Handle the database error
+        print("An error occurred while querying the database:", error)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -72,21 +164,20 @@ def escape_backticks_codeblocks(string, delimiter1):
 
 
 # Define the generate_response function
-def generate_response(mex):
-    # Use the OpenAI Completion API to generate a response
+def generate_response(z, k):
+    #~Create Messages array of dictionary using a for loop fetching the database TEXT_VALUES
+    messagess = get_chats(k, 'user', z)
+    print(f"MESSAGES DICT \n----------------\n\n{messagess}")
+    ## Use the OpenAI Completion API to generate a response
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a friendly and loved trading assistant, The response need to be written in markdown markup language"
-                f"If the response include a a code explainantion it need to be inserted in a code block with the right formatting language key on the code block matching the requested and/or needed programming language"
-            },
-            {"role": "user", "content": f"{mex}\n"}
-            ]
+        messages = messagess
     )
-    print(response.choices)
+    #print(response.choices)
 
-    # Return the text of the first response choice
+    #Return the text of the first response choice
     return response.choices[0].message.content
+    #return messagess
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -216,7 +307,7 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
-    # channel = client.get_channel(1067633857014267905)
+    # channel = client.get_channel (1067633857014267905)
     # await channel.send("I'm now Up and working!")
 
 
@@ -238,11 +329,13 @@ async def on_message(message):
         elif message.content.startswith("!clear"):
             await message.channel.purge()
         elif message.content:
-            # Generate the response
-            response = generate_response(
-                f" {message.content}"
-                )
-            print(f"The response length is: {len(response)}")
+            # Generate the response NO MESSAGE.CONTENT PASSED
+            #~SEND MESSAGES to DB (SERVER_ID_CONTENT[0], ROLE, CLIENT_ID, TIMESTAMP, TEXT)
+            put_chats(message.guild.id, 'user', message.author.id, message.content)
+            response = generate_response(message.author.id, message.guild.id)
+            #~Send messages DB with (SERVER_ID_CONTENT[0], ROLE, CLIENT_ID, TIMESTAMP, TEXT)
+            put_chats(message.guild.id, 'assistant', message.author.id, response)
+            #print(f"The response length is: {len(response)}")
             await init_response(response, message.channel)
         else:
             pass
