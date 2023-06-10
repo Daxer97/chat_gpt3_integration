@@ -40,7 +40,7 @@ def get_chats(x, y, z):
         cursor = conn.cursor()
 
         # Define the SQL query with a WHERE clause
-        query = f"SELECT SERVER_ID, ROLE, CLIENT_ID, TIMESTAMP, TEXT FROM your_table WHERE SERVER_ID = '{x}' AND ROLE IN ('{y}', 'system', 'assistant') AND CLIENT_ID IN ('{z}', '{SYSTEM_ID}') ORDER BY TIMESTAMP"
+        query = f"SELECT ServerID, Role, ClientID, Timestamp, TextContent FROM your_table WHERE ServerID = '{x}' AND Role IN ('{y}', 'system', 'assistant') AND ClientID IN ('{z}', '{SYSTEM_ID}') ORDER BY Timestamp"
 
         # Execute the query
         cursor.execute(query)
@@ -93,7 +93,7 @@ def put_chats(x, y, k, j):
         text = j;
 
         # Define the SQL query with the specific column names
-        query = "INSERT INTO your_table (SERVER_ID, ROLE, CLIENT_ID, TEXT) " \
+        query = "INSERT INTO your_table (ServerID, Role, ClientID, TextContent) " \
                 "VALUES (%s, %s, %s, %s)"
 
         # Execute the query with the values
