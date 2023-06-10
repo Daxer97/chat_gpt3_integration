@@ -2,11 +2,14 @@ import discord
 import openai
 import textwrap
 import mysql.connector
+from transformers import GPT2Tokenizer
 
 
 global CLIENT_ID
 global SERVER_ID_CONTENT
 global SYSTEM_ID
+global PER
+
 SYSTEM_ID = 0;
 
 # Set the link to the source code
@@ -24,6 +27,87 @@ for Intents in discord.Intents.all():
 
 # Set the API key for the OpenAI library
 openai.api_key = ""
+
+# ----------------------------------------------------------------------------------------------------------------------
+def tval(x):
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    tokens = tokenizer.encode(x)
+    return len(tokens)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def calculate_token_percentage(x, j):
+    try:
+
+        # Connect to the MySQL database
+        cnx = mysql.connector.connect(
+            host='127.0.0.1',
+            user='root',
+            password='',
+            database='chat'
+        )
+
+        # Create a cursor object to execute queries
+        cursor = cnx.cursor()
+
+        # Specify the ServerID and ClientID for filtering
+        server_id = x  # Replace with your desired ServerID
+        client_id = j  # Replace with your desired ClientID
+
+        # Prepare the query with placeholders for ServerID and ClientID
+        query = "SELECT SUM(TokenVal) FROM your_table WHERE ServerID = %s AND ClientID = %s AND Role IN ('user', 'assistant')"
+
+        # Execute the query with the specified values
+        cursor.execute(query, (server_id, client_id))
+
+        # Fetch the result of the query
+        sum_result = cursor.fetchone()[0]
+
+        # Close the cursor and database connection
+        cursor.close()
+        cnx.close()
+
+    except mysql.connector.Error as error:
+            # Handle the database error
+            print("An error occurred while querying the database:", error)
+
+    return (sum_result / 4097) * 100
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+def delate_chats(x, y):
+    try:
+        # Connect to MySQL
+        cnx = mysql.connector.connect(
+            host='127.0.0.1',
+            user='root',
+            password='',
+            database='chat'
+        )
+
+        # Create a cursor
+        cursor = cnx.cursor()
+
+        # Define the query
+        query = "DELETE FROM your_table WHERE ServerID = %s AND ClientID = %s"
+
+        # Define the values to match
+        value1 = x
+        value2 = y
+
+        # Execute the query
+        cursor.execute(query, (value1, value2))
+
+        # Commit the changes
+        cnx.commit()
+
+        # Close the cursor and connection
+        cursor.close()
+        cnx.close()
+
+    except mysql.connector.Error as error:
+        # Handle the database error
+        print("An error occurred while querying the database:", error)
 
 # ----------------------------------------------------------------------------------------------------------------------
 def get_chats(x, y, z):
@@ -73,7 +157,7 @@ def get_chats(x, y, z):
         print("An error occurred while querying the database:", error)
 
 
-def put_chats(x, y, k, j):
+def put_chats(x, y, k, j, g):
     try:
         # Connect to the database
         conn = mysql.connector.connect(
@@ -91,13 +175,14 @@ def put_chats(x, y, k, j):
         role = y;
         client_id = k
         text = j;
+        tval = g;
 
         # Define the SQL query with the specific column names
-        query = "INSERT INTO your_table (ServerID, Role, ClientID, TextContent) " \
-                "VALUES (%s, %s, %s, %s)"
+        query = "INSERT INTO your_table (ServerID, Role, ClientID, TextContent, TokenVal)" \
+                "VALUES (%s, %s, %s, %s, %s)"
 
         # Execute the query with the values
-        cursor.execute(query, (server_id, role, client_id, text))
+        cursor.execute(query, (server_id, role, client_id, text, tval))
 
         # Commit the changes to the database
         conn.commit()
@@ -331,12 +416,23 @@ async def on_message(message):
         elif message.content:
             # Generate the response NO MESSAGE.CONTENT PASSED
             #~SEND MESSAGES to DB (SERVER_ID_CONTENT[0], ROLE, CLIENT_ID, TIMESTAMP, TEXT)
-            put_chats(message.guild.id, 'user', message.author.id, message.content)
-            response = generate_response(message.author.id, message.guild.id)
-            #~Send messages DB with (SERVER_ID_CONTENT[0], ROLE, CLIENT_ID, TIMESTAMP, TEXT)
-            put_chats(message.guild.id, 'assistant', message.author.id, response)
+            put_chats(message.guild.id, 'user', message.author.id, message.content, tval(message.content))
+            PER = calculate_token_percentage(message.guild.id, message.author.id)
+            print(PER)
             #print(f"The response length is: {len(response)}")
-            await init_response(response, message.channel)
+            if PER < 83:
+                #~Send messages DB with (SERVER_ID_CONTENT[0], ROLE, CLIENT_ID, TIMESTAMP, TEXT)
+                response = generate_response(message.author.id, message.guild.id)
+                put_chats(message.guild.id, 'assistant', message.author.id, response, tval(response))
+                await init_response((response + f"({PER:.2f}%)") , message.channel)
+            else:
+                delate_chats(message.guild.id, message.author.id)
+                put_chats(message.guild.id, 'user', message.author.id, message.content, tval(message.content))
+                response = generate_response(message.author.id, message.guild.id)
+                #~Send messages DB with (SERVER_ID_CONTENT[0], ROLE, CLIENT_ID, TIMESTAMP, TEXT)
+                put_chats(message.guild.id, 'assistant', message.author.id, response, tval(response))
+                await init_response(response , message.channel)
+
         else:
             pass
 
